@@ -43,7 +43,6 @@ class TagesschauBridge extends FeedExpander
         $rootURL = $rootURL['scheme'] . '://' . $rootURL['host'];
         if (strpos($rootURL, 'www.tagesschau.de') !== false) {
             $item['content'] ??= '';
-            // $articlePage = getSimpleHTMLDOMCached($item['uri']);
             $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT);
 
             $author = $articlePage->find('article .authorline__author', 0);
@@ -58,7 +57,6 @@ class TagesschauBridge extends FeedExpander
                     $article = $articlePage->find('article', 0);
                     break;
             }
-            // ts-image
 
             // Find article main image
             $article = convertLazyLoading($article);
@@ -66,19 +64,8 @@ class TagesschauBridge extends FeedExpander
             // get figure with picture
             $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
 
-
-
             if (is_object($article_image) && !empty($article_image->src)) {
                 $article_image = $rootURL . $article_image->src;
-                // $mime_type = parse_mime_type($article_image);
-                // if (strpos($mime_type, 'image') === false) {
-                //     $article_image .= '#.image'; // force image
-                // }
-                // if (empty($item['enclosures'])) {
-                //     $item['enclosures'] = [$article_image];
-                // } else {
-                //     $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
-                // }
             }
             if (!is_null($article)) {
                 $item['content'] = $this->cleanContent($article, $article_image, $rootURL);
