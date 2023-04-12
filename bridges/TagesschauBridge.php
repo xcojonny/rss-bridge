@@ -39,51 +39,52 @@ class TagesschauBridge extends FeedExpander
     protected function parseItem($item)
     {
         $item = parent::parseItem($item);
-        $item['content'] ??= '';
         $uri = $item['uri'];
         $rootURL = parse_url($uri);
         $rootURL = $rootURL['scheme'] . '://' . $rootURL['host'];
+        if ($rootURL[0] == 'https://www.tagesschau.de/') {
+            $item['content'] ??= '';
+            // $articlePage = getSimpleHTMLDOMCached($item['uri']);
+            $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT);
 
-        // $articlePage = getSimpleHTMLDOMCached($item['uri']);
-        $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT);
+            $author = $articlePage->find('article .authorline__author', 0);
+            if ($author) {
+                $item['author'] = $author->plaintext;
+            }
+            // Find article body
+            $article = null;
+            switch (true) {
+                case !is_null($articlePage->find('article', 0)):
+                    // most common content div
+                    $article = $articlePage->find('article', 0);
+                    break;
+            }
+            // ts-image
 
-        $author = $articlePage->find('article .authorline__author', 0);
-        if ($author) {
-            $item['author'] = $author->plaintext;
-        }
-        // Find article body
-        $article = null;
-        switch (true) {
-            case !is_null($articlePage->find('article', 0)):
-                // most common content div
-                $article = $articlePage->find('article', 0);
-                break;
-        }
-        // ts-image
-
-        // Find article main image
-        $article = convertLazyLoading($article);
-        $article_image = $articlePage->find('img.ts-image', 0);
-        // get figure with picture
-        $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
-        // $article_image = $articlePage->find('source[media="(max-width: 1023px)"]', 0);
+            // Find article main image
+            $article = convertLazyLoading($article);
+            $article_image = $articlePage->find('img.ts-image', 0);
+            // get figure with picture
+            $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
+            // $article_image = $articlePage->find('source[media="(max-width: 1023px)"]', 0);
 
 
-        if (is_object($article_image) && !empty($article_image->src)) {
-            $article_image = $rootURL . $article_image->src;
-            // $mime_type = parse_mime_type($article_image);
-            // if (strpos($mime_type, 'image') === false) {
-            //     $article_image .= '#.image'; // force image
-            // }
-            // if (empty($item['enclosures'])) {
-            //     $item['enclosures'] = [$article_image];
-            // } else {
-            //     $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
-            // }
-        }
-        if (!is_null($article)) {
-            $item['content'] = $this->cleanContent($article, $article_image);
-            $item['content'] = defaultLinkTo($item['content'], $item['uri']);
+            if (is_object($article_image) && !empty($article_image->src)) {
+                $article_image = $rootURL . $article_image->src;
+                // $mime_type = parse_mime_type($article_image);
+                // if (strpos($mime_type, 'image') === false) {
+                //     $article_image .= '#.image'; // force image
+                // }
+                // if (empty($item['enclosures'])) {
+                //     $item['enclosures'] = [$article_image];
+                // } else {
+                //     $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
+                // }
+            }
+            if (!is_null($article)) {
+                $item['content'] = $this->cleanContent($article, $article_image);
+                $item['content'] = defaultLinkTo($item['content'], $item['uri']);
+            }
         }
 
         return $item;
