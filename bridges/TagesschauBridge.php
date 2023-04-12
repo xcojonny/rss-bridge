@@ -5,8 +5,8 @@ class TagesschauBridge extends FeedExpander
     const MAINTAINER = 'Jonas M';
     const NAME = 'Tagesschau Bridge';
     const URI = 'https://www.tagesschau.de/';
-    const CACHE_TIMEOUT = 1800; // 30min
-    // const CACHE_TIMEOUT = 10; // 30min
+    // const CACHE_TIMEOUT = 1800; // 30min
+    const CACHE_TIMEOUT = 10; // 30min
     const DESCRIPTION = 'Returns the full articles';
     const PARAMETERS = [[
         'category' => [
@@ -71,15 +71,15 @@ class TagesschauBridge extends FeedExpander
 
         if (is_object($article_image) && !empty($article_image->src)) {
             $article_image = $rootURL . $article_image->src;
-            $mime_type = parse_mime_type($article_image);
-            if (strpos($mime_type, 'image') === false) {
-                $article_image .= '#.image'; // force image
-            }
-            if (empty($item['enclosures'])) {
-                $item['enclosures'] = [$article_image];
-            } else {
-                $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
-            }
+            // $mime_type = parse_mime_type($article_image);
+            // if (strpos($mime_type, 'image') === false) {
+            //     $article_image .= '#.image'; // force image
+            // }
+            // if (empty($item['enclosures'])) {
+            //     $item['enclosures'] = [$article_image];
+            // } else {
+            //     $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
+            // }
         }
         if (!is_null($article)) {
             $item['content'] = $this->cleanContent($article, $article_image);
@@ -104,6 +104,7 @@ class TagesschauBridge extends FeedExpander
         // // reload html, as remove() is buggy
         // $article = str_get_html($article->outertext);
 
+        // add main image to page
         $image = "<img src='" . $image . "' alt='Image Description'>";
         $item .= $image;
         // $content = $article;
