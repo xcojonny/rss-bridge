@@ -108,7 +108,7 @@ class TagesschauBridge extends FeedExpander
         $image = "<img src='" . $image . "' alt='Image Description'>";
         $item .= $image;
         // $content = $article;
-        foreach ($article->find('p.textabsatz, h2, h3') as $element) {
+        foreach ($article->find('p.textabsatz, h2, h3, .absatzbild') as $element) {
             $item .= $element;
         }
         return $item;
