@@ -6,16 +6,15 @@ class TagesschauBridge extends FeedExpander
     const NAME = 'Tagesschau Bridge';
     const URI = 'https://www.tagesschau.de/';
     const CACHE_TIMEOUT = 1800; // 30min
-    const DESCRIPTION = 'Returns the full articles instead of only the intro';
+    // const CACHE_TIMEOUT = 10; // 30min
+    const DESCRIPTION = 'Returns the full articles';
     const PARAMETERS = [[
         'category' => [
             'name' => 'Category',
             'type' => 'list',
             'values' => [
                 'Alle News'
-                => 'https://www.tagesschau.de/xml/rss2/',
-                'Alle GolemNews'
-                => 'https://rss.golem.de/rss.php?feed=ATOM1.0',
+                => 'https://www.tagesschau.de/xml/rss2/'
             ]
         ],
         'limit' => [
@@ -42,76 +41,75 @@ class TagesschauBridge extends FeedExpander
         $item = parent::parseItem($item);
         $item['content'] ??= '';
         $uri = $item['uri'];
+        $rootURL = parse_url($uri);
+        $rootURL = $rootURL['scheme'] . '://' . $rootURL['host'];
 
-        // $urls = [];
-
-        // while ($uri) {
-        //     if (isset($urls[$uri])) {
-        //         // Prevent forever a loop
-        //         break;
-        //     // }
-        // $urls[$uri] = true;
-
-        // $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT, static::HEADERS);
+        // $articlePage = getSimpleHTMLDOMCached($item['uri']);
         $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT);
-
-        // URI without RSS feed reference
-        // $item['uri'] = $articlePage->find('head meta[name="twitter:url"]', 0)->content;
 
         $author = $articlePage->find('article .authorline__author', 0);
         if ($author) {
             $item['author'] = $author->plaintext;
         }
+        // Find article body
+        $article = null;
+        switch (true) {
+            case !is_null($articlePage->find('article', 0)):
+                // most common content div
+                $article = $articlePage->find('article', 0);
+                break;
+        }
+        // ts-image
 
-        $item['content'] .= $this->extractContent($articlePage);
+        // Find article main image
+        $article = convertLazyLoading($article);
+        $article_image = $articlePage->find('img.ts-image', 0);
+        // get figure with picture
+        $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
+        // $article_image = $articlePage->find('source[media="(max-width: 1023px)"]', 0);
 
-            // next page
-            // $nextUri = $articlePage->find('link[rel="next"]', 0);
-            // $uri = $nextUri ? static::URI . $nextUri->href : null;
-        // }
+
+        if (is_object($article_image) && !empty($article_image->src)) {
+            $article_image = $rootURL . $article_image->src;
+            $mime_type = parse_mime_type($article_image);
+            if (strpos($mime_type, 'image') === false) {
+                $article_image .= '#.image'; // force image
+            }
+            if (empty($item['enclosures'])) {
+                $item['enclosures'] = [$article_image];
+            } else {
+                $item['enclosures'] = array_merge($item['enclosures'], (array) $article_image);
+            }
+        }
+        if (!is_null($article)) {
+            $item['content'] = $this->cleanContent($article, $article_image);
+            $item['content'] = defaultLinkTo($item['content'], $item['uri']);
+        }
 
         return $item;
     }
 
-    private function extractContent($page)
+    private function cleanContent($page, $image)
     {
         $item = '';
-
-        $article = $page->find('article', 0);
+        $article = $page;
         // $item = $page;
         // delete known bad elements
-        foreach (
-            $article->find('div[id*="adtile"], .teaser-absatz, .copytext-element-wrapper, #seminars,
-            div.gbox_affiliate, div.toc, .embedcontent') as $bad
-        ) {
-            $bad->remove();
-        }
-        // reload html, as remove() is buggy
-        $article = str_get_html($article->outertext);
+        // foreach (
+        //     $article->find('div[id*="adtile"], .teaser-absatz, .copytext-element-wrapper, #seminars,
+        //     div.gbox_affiliate, div.toc, .embedcontent') as $bad
+        // ) {
+        //     $bad->remove();
+        // }
+        // // reload html, as remove() is buggy
+        // $article = str_get_html($article->outertext);
 
-        if ($pageHeader = $article->find('.seitenkopf__headline h1', 0)) {
-            $item .= $pageHeader;
-        }
-
-        $header = $article->find('header', 0);
-        foreach ($header->find('p, figure') as $element) {
+        $image = "<img src='" . $image . "' alt='Image Description'>";
+        $item .= $image;
+        // $content = $article;
+        foreach ($article->find('p.textabsatz, h2, h3') as $element) {
             $item .= $element;
         }
-
-        $content = $article->find('div.formatted', 0);
-        foreach ($article->find('p, h1, h3, img[src*="."]') as $element) {
-            $content .= $element;
-        }
-
-        // full image quality
-        foreach ($content->find('img[data-src-full][src*="."]') as $img) {
-            $img->src = $img->getAttribute('data-src-full');
-        }
-
-        foreach ($content->find('p, h1, h3, img[src*="."]') as $element) {
-            $item .= $element;
-        }
-
         return $item;
     }
 }
