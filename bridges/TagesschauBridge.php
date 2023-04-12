@@ -42,7 +42,7 @@ class TagesschauBridge extends FeedExpander
         $uri = $item['uri'];
         $rootURL = parse_url($uri);
         $rootURL = $rootURL['scheme'] . '://' . $rootURL['host'];
-        if ($rootURL[0] == 'https://www.tagesschau.de/') {
+        if (strpos($rootURL, 'www.tagesschau.de') !== false) {
             $item['content'] ??= '';
             // $articlePage = getSimpleHTMLDOMCached($item['uri']);
             $articlePage = getSimpleHTMLDOMCached($uri, static::CACHE_TIMEOUT);
