@@ -26,7 +26,6 @@ class TagesschauBridge extends FeedExpander
         ]
     ]];
     const LIMIT = 5;
-    // const HEADERS = ['Cookie: golem_consent20=simple|220101;'];
 
     public function collectData()
     {
@@ -66,7 +65,7 @@ class TagesschauBridge extends FeedExpander
             $article_image = $articlePage->find('img.ts-image', 0);
             // get figure with picture
             $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
-            // $article_image = $articlePage->find('source[media="(max-width: 1023px)"]', 0);
+
 
 
             if (is_object($article_image) && !empty($article_image->src)) {
