@@ -81,7 +81,7 @@ class TagesschauBridge extends FeedExpander
                 // }
             }
             if (!is_null($article)) {
-                $item['content'] = $this->cleanContent($article, $article_image);
+                $item['content'] = $this->cleanContent($article, $article_image, $rootURL);
                 $item['content'] = defaultLinkTo($item['content'], $item['uri']);
             }
         }
@@ -89,7 +89,7 @@ class TagesschauBridge extends FeedExpander
         return $item;
     }
 
-    private function cleanContent($page, $image)
+    private function cleanContent($page, $image, $rootURL)
     {
         $item = '';
         $article = $page;
@@ -110,6 +110,14 @@ class TagesschauBridge extends FeedExpander
         // $content = $article;
         foreach ($article->find('p.textabsatz, h2, h3, .absatzbild') as $element) {
             $item .= $element;
+        }
+
+        //  fix double loaded pictures in Freshrss
+        $item = str_get_html($item);
+        foreach ($item->find('div.absatzbild__media') as $element) {
+            $image = $element->find('img', 0);
+            $image = $rootURL . $image->src;
+            $element->outertext  = "<img src='" . $image . "' alt='Image Description'>";
         }
         return $item;
     }
