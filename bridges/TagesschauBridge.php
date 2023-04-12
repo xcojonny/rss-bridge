@@ -95,7 +95,7 @@ class TagesschauBridge extends FeedExpander
         $image = "<img src='" . $image . "' alt='Image Description'>";
         $item .= $image;
         // $content = $article;
-        foreach ($article->find('p.textabsatz, h2, h3, .absatzbild, div.copytext__embed, div, div.copytext__video') as $element) {
+        foreach ($article->find('p.textabsatz, h2, h3, .absatzbild, div.copytext__embed, div.copytext__video') as $element) {
             $item .= $element;
         }
 
@@ -105,6 +105,11 @@ class TagesschauBridge extends FeedExpander
             $image = $element->find('img', 0);
             $image = $rootURL . $image->src;
             $element->outertext  = "<img src='" . $image . "' alt='Image Description'>";
+        }
+
+        // go through external links and process iframes
+        foreach ($item->find('div.copytext__embed, div.copytext__video') as $element) {
+            $element ->outertext  = '<h3>----Embeded Content----</h3>';
         }
         return $item;
     }
