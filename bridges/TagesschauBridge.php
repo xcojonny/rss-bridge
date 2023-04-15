@@ -2,7 +2,7 @@
 
 class TagesschauBridge extends FeedExpander
 {
-    const MAINTAINER = 'Jonas M';
+    const MAINTAINER = 'xcojonny';
     const NAME = 'Tagesschau Bridge';
     const URI = 'https://www.tagesschau.de/';
     // const CACHE_TIMEOUT = 1800; // 30min
@@ -59,10 +59,10 @@ class TagesschauBridge extends FeedExpander
             }
 
             // Find article main image
-            $article = convertLazyLoading($article);
+            // $article = convertLazyLoading($article);
             $article_image = $articlePage->find('img.ts-image', 0);
             // get figure with picture
-            $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
+            // $article_image = $articlePage->find('source[media="(max-width: 767px)"]', 0);
 
             if (is_object($article_image) && !empty($article_image->src)) {
                 $article_image = $rootURL . $article_image->src;
@@ -108,7 +108,7 @@ class TagesschauBridge extends FeedExpander
         }
 
         // go through external links and process iframes
-        foreach ($item->find('div.copytext__embed, div.copytext__video') as $element) {
+        foreach ($item->find('div.copytext__embed, div.copytext__video, div.copytext__audio') as $element) {
             $element ->outertext  = '<h3>----Embeded Content----</h3>';
         }
         return $item;
